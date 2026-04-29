@@ -30,12 +30,18 @@ def add_rolling_features(df: pd.DataFrame, cols: list, windows: list = [10, 60])
 
 def identify_sensor_types(df: pd.DataFrame) -> tuple:
     """
-    Split columns into continuous sensors vs binary actuators.
-    
+    Split columns into continuous sensors, ordinal valves, and binary actuators.
+
+    SWaT actuator taxonomy:
+      - MV (motorized valves): ordinal, 3 states (0=closed, 1=transitioning, 2=open)
+      - Binary actuators (pumps, UV): 2 states (0/1)
+      - Continuous sensors: FIT, LIT, AIT, DPIT, PIT, etc.
+
     Returns
     -------
-    (continuous_cols, binary_cols)
+    (continuous_cols, mv_cols, binary_cols)
     """
-    binary_cols     = [c for c in df.columns if df[c].nunique() <= 2]
-    continuous_cols = [c for c in df.columns if c not in binary_cols]
-    return continuous_cols, binary_cols
+    mv_cols         = [c for c in df.columns if c.strip().upper().startswith('MV')]
+    binary_cols     = [c for c in df.columns if c not in mv_cols and df[c].nunique() <= 2]
+    continuous_cols = [c for c in df.columns if c not in mv_cols and c not in binary_cols]
+    return continuous_cols, mv_cols, binary_cols
